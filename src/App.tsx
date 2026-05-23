@@ -1,89 +1,14 @@
 import { useRef } from "react";
-import { Mail, Printer, ExternalLink } from "lucide-react";
+import { resumeData } from "./resumeData";
+import { LinkedInIcon, GitHubIcon, MailIcon, PrinterIcon, ExternalLinkIcon } from "./icons";
 
-const resumeData = {
-  name: "sohal islam",
-  title: "Agentic AI Engineer",
-  contact: {
-    email: "sohelsilamblg01@gmail.com",
-    linkedin: "https://www.linkedin.com/in/sohail-islam-64775335b/",
-    github: "https://github.com/sohail22dec?tab=repositories",
-  },
-  summary:
-    "Passionate Agentic AI Engineer specializing in designing and building autonomous multi-agent systems, intelligent orchestration pipelines, and production-ready AI applications. Experienced in bridging cutting-edge AI research with real-world product engineering using modern LLM frameworks and full-stack technologies.",
-  skills: [
-    {
-      category: "AI & Orchestration",
-      items: ["LangChain", "LangGraph", "LangSmith", "n8n"],
-    },
-    {
-      category: "Languages",
-      items: ["Python", "JavaScript", "TypeScript"],
-    },
-    {
-      category: "Backend",
-      items: ["Node.js", "Express.js", "FastAPI"],
-    },
-    {
-      category: "Frontend",
-      items: ["React", "Next.js"],
-    },
-    {
-      category: "Databases",
-      items: ["MongoDB", "PostgreSQL"],
-    },
-    {
-      category: "Tooling",
-      items: ["Docker", "uv", "Ruff", "Git"],
-    },
-  ],
-  projects: [
-    {
-      name: "DocMatch AI",
-      subtitle: "Multi-Agent Healthcare Assistant",
-      demoUrl: "https://docmatch-ai.vercel.app", // Replace with your live link
-      tech: ["LangChain, LangGraph", "FastAPI", "Google Maps API", "Tavily", "Python"],
-      bullets: [
-        "Architected a multi-agent diagnostic and scheduling system where users can describe medical symptoms in natural language for intelligent analysis.",
-        "Engineered an agentic workflow that analyzes symptoms and autonomously determines the appropriate medical specialist using LLM-powered reasoning.",
-        "Integrated the Google Maps API to enable location-based doctor discovery and implemented a simulated appointment booking system.",
-        "Built an automated notification pipeline to trigger confirmation emails to users upon successful booking.",
-      ],
-    },
-    {
-      name: "Kraya AI Agent",
-      subtitle: "Autonomous Research Assistant",
-      demoUrl: "https://kraya-agent.vercel.app", // Replace with your live link
-      tech: ["LangChain", "LangGraph", "React", "TanStack Query", "SSE", "Google Docs API"],
-      bullets: [
-        "Developed an autonomous research agent that gathers information, synthesizes data, and generates comprehensive, structured reports.",
-        "Integrated with Google Workspace APIs to automatically export and format generated reports directly into Google Docs.",
-        "Built the backend and a responsive chat interface featuring state management with TanStack Query and Server-Sent Events (SSE) for real-time AI message streaming.",
-      ],
-    },
-  ],
-  education: {
-    degree: "Bachelor's in Computer Application",
-    institution: "CV Raman University",
-    duration: "2023 – 2026",
-    location: "Balurghat, West Bengal",
-    cgpa: "CGPA: 8.5", // You can edit this value
-  },
+const getCleanDomain = (url: string) => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url.replace(/https?:\/\/(www\.)?/, "");
+  }
 };
-
-const LinkedInIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-    <rect x="2" y="9" width="4" height="12" />
-    <circle cx="4" cy="4" r="2" />
-  </svg>
-);
-
-const GitHubIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
-  </svg>
-);
 
 export default function App() {
   const resumeRef = useRef<HTMLDivElement>(null);
@@ -102,7 +27,7 @@ export default function App() {
             className="flex items-center gap-2 bg-slate-900 text-white border-none px-[22px] py-2.5 rounded text-sm font-semibold cursor-pointer transition-colors hover:bg-slate-800 tracking-wide"
             onClick={handlePrint}
           >
-            <Printer size={16} />
+            <PrinterIcon size={16} />
             Download / Print PDF
           </button>
         </div>
@@ -124,7 +49,7 @@ export default function App() {
           </div>
           <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0 print:items-end mt-1">
             <a href={`mailto:${resumeData.contact.email}`} className="flex items-center gap-2 text-[13px] text-slate-700 hover:text-slate-900 transition-colors decoration-transparent">
-              <span className="text-slate-500 flex items-center"><Mail size={14} /></span>
+              <span className="text-slate-500 flex items-center"><MailIcon size={14} /></span>
               <span>{resumeData.contact.email}</span>
             </a>
             <a href={resumeData.contact.linkedin} className="flex items-center gap-2 text-[13px] text-slate-700 hover:text-slate-900 transition-colors decoration-transparent" target="_blank" rel="noreferrer">
@@ -188,10 +113,13 @@ export default function App() {
                       href={project.demoUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[12px] text-slate-500 hover:text-slate-900 font-semibold flex items-center gap-1 transition-colors decoration-transparent print:hidden"
+                      className="text-[12px] text-slate-500 hover:text-slate-900 font-semibold flex items-center gap-1 transition-colors decoration-transparent"
                     >
                       <span>Live Demo</span>
-                      <ExternalLink size={14} />
+                      <span className="hidden print:inline text-slate-400 font-normal ml-1">
+                        ({getCleanDomain(project.demoUrl)})
+                      </span>
+                      <ExternalLinkIcon size={14} />
                     </a>
                   )}
                 </div>
