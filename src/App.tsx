@@ -35,6 +35,7 @@ export default function App() {
 
       {/* Resume Page */}
       <div
+        id="resume-page"
         ref={resumeRef}
         className="w-full max-w-[794px] min-h-[1123px] bg-white mt-10 p-[52px_56px] shadow-xl rounded border border-slate-200 relative overflow-hidden print:m-0 print:py-[12px] print:px-[48px] print:shadow-none print:border-none print:w-full print:min-h-0 print:rounded-none max-md:p-[36px_24px] max-md:mt-0 max-md:rounded-none"
       >

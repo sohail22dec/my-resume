@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap");
+@import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -7,7 +7,10 @@
 }
 
 @layer base {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     @apply border-slate-200;
   }
 }
@@ -17,14 +20,18 @@
     size: A4;
     margin: 0;
   }
-  
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    color-adjust: exact !important;
   }
-  
-  html, body {
+
+  html,
+  body {
     background-color: white !important;
+  }
+
+  #resume-page {
+    zoom: 82%;
   }
 }
