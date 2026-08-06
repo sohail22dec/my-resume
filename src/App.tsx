@@ -4,6 +4,7 @@ import type { ResumeDataType } from "./resumeData";
 import { LinkedInIcon, GitHubIcon, MailIcon, PhoneIcon, MapPinIcon, PrinterIcon, ExternalLinkIcon } from "./icons";
 import { tailorResumeWithAI, ALL_AI_MODELS } from "./aiTailor";
 import type { TailorResponse } from "./aiTailor";
+import { ResumeEditorPanel } from "./ResumeEditorPanel";
 
 const getCleanDomain = (url: string) => {
   try {
@@ -16,7 +17,10 @@ const getCleanDomain = (url: string) => {
 export default function App() {
   const resumeRef = useRef<HTMLDivElement>(null);
 
-  // Resume Data State (Can be tailored by AI)
+  // Active Tab State ('ai' or 'edit')
+  const [activeTab, setActiveTab] = useState<"ai" | "edit">("ai");
+
+  // Resume Data State (Can be tailored by AI or edited manually)
   const [activeResume, setActiveResume] = useState<ResumeDataType>(resumeData);
   const [isTailored, setIsTailored] = useState<boolean>(false);
   const [tailoredRole, setTailoredRole] = useState<string>("");
@@ -37,6 +41,73 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isAiPanelCollapsed, setIsAiPanelCollapsed] = useState<boolean>(false);
+
+  const editableClass = "outline-none rounded px-1 transition-all cursor-text hover:bg-amber-50 hover:ring-1 hover:ring-amber-400 focus:bg-amber-50 focus:ring-2 focus:ring-purple-500 print:hover:bg-transparent print:hover:ring-0 print:focus:ring-0";
+
+  const handleEditableBlur = (fieldPath: string, newValue: string) => {
+    const trimmed = newValue.trim();
+    if (!trimmed && fieldPath !== "demoUrl") return;
+
+    if (fieldPath === "name") setActiveResume((r) => ({ ...r, name: newValue }));
+    else if (fieldPath === "title") setActiveResume((r) => ({ ...r, title: newValue }));
+    else if (fieldPath === "summary") setActiveResume((r) => ({ ...r, summary: newValue }));
+    else if (fieldPath.startsWith("contact.")) {
+      const field = fieldPath.split(".")[1];
+      setActiveResume((r) => ({ ...r, contact: { ...r.contact, [field]: newValue } }));
+    } else if (fieldPath.startsWith("skillCat.")) {
+      const idx = parseInt(fieldPath.split(".")[1]);
+      setActiveResume((r) => ({
+        ...r,
+        skills: r.skills.map((s, i) => (i === idx ? { ...s, category: newValue } : s)),
+      }));
+    } else if (fieldPath.startsWith("skillItems.")) {
+      const idx = parseInt(fieldPath.split(".")[1]);
+      const items = newValue.split(",").map((i) => i.trim()).filter(Boolean);
+      setActiveResume((r) => ({
+        ...r,
+        skills: r.skills.map((s, i) => (i === idx ? { ...s, items } : s)),
+      }));
+    } else if (fieldPath.startsWith("projName.")) {
+      const pIdx = parseInt(fieldPath.split(".")[1]);
+      setActiveResume((r) => ({
+        ...r,
+        projects: r.projects.map((p, i) => (i === pIdx ? { ...p, name: newValue } : p)),
+      }));
+    } else if (fieldPath.startsWith("projSubtitle.")) {
+      const pIdx = parseInt(fieldPath.split(".")[1]);
+      setActiveResume((r) => ({
+        ...r,
+        projects: r.projects.map((p, i) => (i === pIdx ? { ...p, subtitle: newValue } : p)),
+      }));
+    } else if (fieldPath.startsWith("projTech.")) {
+      const pIdx = parseInt(fieldPath.split(".")[1]);
+      const tech = newValue.split(",").map((t) => t.trim()).filter(Boolean);
+      setActiveResume((r) => ({
+        ...r,
+        projects: r.projects.map((p, i) => (i === pIdx ? { ...p, tech } : p)),
+      }));
+    } else if (fieldPath.startsWith("projBullet.")) {
+      const parts = fieldPath.split(".");
+      const pIdx = parseInt(parts[1]);
+      const bIdx = parseInt(parts[2]);
+      setActiveResume((r) => ({
+        ...r,
+        projects: r.projects.map((p, i) => {
+          if (i !== pIdx) return p;
+          return {
+            ...p,
+            bullets: p.bullets.map((b, bi) => (bi === bIdx ? newValue : b)),
+          };
+        }),
+      }));
+    } else if (fieldPath.startsWith("edu.")) {
+      const field = fieldPath.split(".")[1];
+      setActiveResume((r) => ({
+        ...r,
+        education: { ...r.education, [field]: newValue },
+      }));
+    }
+  };
 
   // Check env keys
   const hasEnvGroq = Boolean(import.meta.env.VITE_GROQ_API_KEY);
@@ -307,14 +378,23 @@ export default function App() {
 
           </div>
 
-          {/* Full-width Download PDF Button on Mobile */}
-          <button
-            className="w-full lg:w-auto flex items-center justify-center gap-2 bg-slate-900 text-white border-none px-5 py-2.5 sm:py-2 rounded-lg text-xs font-bold cursor-pointer transition-all hover:bg-slate-800 tracking-wide shadow-sm shrink-0"
-            onClick={handlePrint}
-          >
-            <PrinterIcon size={16} />
-            Download / Print PDF
-          </button>
+          {/* Action Header Buttons: Reset & Download PDF */}
+          <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
+            <button
+              onClick={handleResetResume}
+              className="flex-1 lg:flex-none flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-2xs"
+              title="Reset resume to original master data"
+            >
+              <span>🔄 Reset to Original</span>
+            </button>
+            <button
+              className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white border-none px-5 py-2 sm:py-2 rounded-lg text-xs font-bold cursor-pointer transition-all hover:bg-slate-800 tracking-wide shadow-sm"
+              onClick={handlePrint}
+            >
+              <PrinterIcon size={16} />
+              Download / Print PDF
+            </button>
+          </div>
 
         </div>
       </div>
@@ -328,13 +408,15 @@ export default function App() {
           {/* Panel Header */}
           <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-5 py-3.5 flex items-center justify-between shrink-0 select-none">
             <div className="flex items-center gap-2">
-              <span className="text-base">✨</span>
-              <h2 className="text-sm font-extrabold tracking-tight">AI Resume Tailor</h2>
+              <span className="text-base">{activeTab === "ai" ? "✨" : "✏️"}</span>
+              <h2 className="text-sm font-extrabold tracking-tight">
+                {activeTab === "ai" ? "AI Resume Tailor" : "Resume UI Editor"}
+              </h2>
             </div>
             <div className="flex items-center gap-2">
               <span className="bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>.env Active</span>
+                <span>Live Sync</span>
               </span>
               <button
                 onClick={() => setIsAiPanelCollapsed(!isAiPanelCollapsed)}
@@ -346,130 +428,164 @@ export default function App() {
             </div>
           </div>
 
+          {/* Tab Navigation Switcher */}
+          {!isAiPanelCollapsed && (
+            <div className="flex border-b border-slate-200 bg-slate-100 text-xs font-bold shrink-0">
+              <button
+                onClick={() => setActiveTab("ai")}
+                className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
+                  activeTab === "ai"
+                    ? "border-purple-600 text-purple-700 bg-white"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span>🤖 AI Tailor</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("edit")}
+                className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
+                  activeTab === "edit"
+                    ? "border-purple-600 text-purple-700 bg-white"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span>✏️ Edit Resume (UI)</span>
+              </button>
+            </div>
+          )}
+
           {/* Panel Body (Collapsible - Bigger Mode) */}
           {!isAiPanelCollapsed && (
-            <div className="p-5 space-y-4 text-xs overflow-y-auto flex-1">
+            activeTab === "ai" ? (
+              <div className="p-5 space-y-4 text-xs overflow-y-auto flex-1">
 
-              {/* 1. Model Selector */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-800 text-xs">1. Select AI Model:</label>
-                  <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                    {currentSelectedOption.provider === "groq" ? "⚡ Groq LPU" : "✨ Gemini"}
-                  </span>
+                {/* 1. Model Selector */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-800 text-xs">1. Select AI Model:</label>
+                    <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                      {currentSelectedOption.provider === "groq" ? "⚡ Groq LPU" : "✨ Gemini"}
+                    </span>
+                  </div>
+                  <select
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-bold text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer shadow-2xs"
+                  >
+                    <optgroup label="⚡ Groq Models (Ultra-Fast LPUs)">
+                      {ALL_AI_MODELS.filter(m => m.provider === "groq").map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="✨ Google Gemini Models">
+                      {ALL_AI_MODELS.filter(m => m.provider === "gemini").map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
                 </div>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-bold text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer shadow-2xs"
-                >
-                  <optgroup label="⚡ Groq Models (Ultra-Fast LPUs)">
-                    {ALL_AI_MODELS.filter(m => m.provider === "groq").map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="✨ Google Gemini Models">
-                    {ALL_AI_MODELS.filter(m => m.provider === "gemini").map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                </select>
-              </div>
 
-              {/* Manual Key override if .env keys missing */}
-              {(!hasEnvGroq && currentSelectedOption.provider === "groq") || (!hasEnvGemini && currentSelectedOption.provider === "gemini") ? (
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Enter API Key:</label>
-                  <input
-                    type="password"
-                    placeholder="Paste Key Here..."
-                    value={currentSelectedOption.provider === "groq" ? userGroqKey : userGeminiKey}
-                    onChange={(e) => currentSelectedOption.provider === "groq" ? handleSaveGroqKey(e.target.value) : handleSaveGeminiKey(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                {/* Manual Key override if .env keys missing */}
+                {(!hasEnvGroq && currentSelectedOption.provider === "groq") || (!hasEnvGemini && currentSelectedOption.provider === "gemini") ? (
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">Enter API Key:</label>
+                    <input
+                      type="password"
+                      placeholder="Paste Key Here..."
+                      value={currentSelectedOption.provider === "groq" ? userGroqKey : userGeminiKey}
+                      onChange={(e) => currentSelectedOption.provider === "groq" ? handleSaveGroqKey(e.target.value) : handleSaveGeminiKey(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                    />
+                  </div>
+                ) : null}
+
+                {/* 2. Job Description Textarea - Bigger Mode */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-800 text-xs">2. Paste Job Description (JD):</label>
+                    <div className="flex items-center gap-2">
+                      {jobDescription.length > 0 && (
+                        <>
+                          <span className="text-[11px] text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                            {jobDescription.length} chars
+                          </span>
+                          <button
+                            onClick={() => setJobDescription("")}
+                            className="text-[11px] text-red-600 hover:text-red-800 font-bold hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <textarea
+                    rows={10}
+                    placeholder="Paste job description text from LinkedIn, Internshala, TARS, or any hiring portal here..."
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 leading-relaxed text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none resize-y min-h-[220px] max-h-[380px] shadow-inner font-sans"
                   />
                 </div>
-              ) : null}
 
-              {/* 2. Job Description Textarea - Bigger Mode */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-800 text-xs">2. Paste Job Description (JD):</label>
-                  <div className="flex items-center gap-2">
-                    {jobDescription.length > 0 && (
+                {/* 3. Action Buttons */}
+                <div className="pt-1 space-y-2">
+                  <button
+                    disabled={isLoading}
+                    onClick={handleRunAiTailor}
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white p-3.5 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 text-xs tracking-wide"
+                  >
+                    {isLoading ? (
                       <>
-                        <span className="text-[11px] text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                          {jobDescription.length} chars
-                        </span>
-                        <button
-                          onClick={() => setJobDescription("")}
-                          className="text-[11px] text-red-600 hover:text-red-800 font-bold hover:underline cursor-pointer"
-                        >
-                          Clear
-                        </button>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>Tailoring via AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>🚀 Tailor Resume with AI</span>
                       </>
                     )}
-                  </div>
-                </div>
-                <textarea
-                  rows={10}
-                  placeholder="Paste job description text from LinkedIn, Internshala, TARS, or any hiring portal here..."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 leading-relaxed text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none resize-y min-h-[220px] max-h-[380px] shadow-inner font-sans"
-                />
-              </div>
-
-              {/* 3. Action Buttons */}
-              <div className="pt-1 space-y-2">
-                <button
-                  disabled={isLoading}
-                  onClick={handleRunAiTailor}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white p-3.5 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 text-xs tracking-wide"
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      <span>Tailoring via AI...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>🚀 Tailor Resume with AI</span>
-                    </>
-                  )}
-                </button>
-
-                {isTailored && (
-                  <button
-                    onClick={handleResetResume}
-                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg font-bold transition-colors cursor-pointer text-xs"
-                  >
-                    🔄 Reset to Original Resume
                   </button>
-                )}
-              </div>
 
-              {/* Error / Success Notifications */}
-              {errorMsg && (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-2.5 rounded-lg text-[11px]">
-                  <span className="font-bold">⚠️ Error: </span>{errorMsg}
+                  {isTailored && (
+                    <button
+                      onClick={handleResetResume}
+                      className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg font-bold transition-colors cursor-pointer text-xs"
+                    >
+                      🔄 Reset to Original Resume
+                    </button>
+                  )}
                 </div>
-              )}
 
-              {isTailored && !errorMsg && (
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-lg text-[11px]">
-                  <div className="font-bold flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>Tailored for: {tailoredRole}</span>
+                {/* Error / Success Notifications */}
+                {errorMsg && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 p-2.5 rounded-lg text-[11px]">
+                    <span className="font-bold">⚠️ Error: </span>{errorMsg}
                   </div>
-                  <p className="text-[10px] text-emerald-700 mt-0.5">Resume updated live on the right 👉</p>
-                </div>
-              )}
+                )}
 
-            </div>
+                {isTailored && !errorMsg && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-lg text-[11px]">
+                    <div className="font-bold flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>Tailored for: {tailoredRole}</span>
+                    </div>
+                    <p className="text-[10px] text-emerald-700 mt-0.5">Resume updated live on the right 👉</p>
+                  </div>
+                )}
+
+              </div>
+            ) : (
+              <ResumeEditorPanel
+                resume={activeResume}
+                onChange={(updated) => setActiveResume(updated)}
+                onReset={handleResetResume}
+              />
+            )
           )}
         </div>
 
@@ -493,44 +609,98 @@ export default function App() {
           {/* Top accent bar */}
           <div className="absolute top-0 left-0 right-0 h-[5px] bg-slate-900 print:bg-slate-900 print:h-[5px]"></div>
 
+          {/* Edit Hint Banner (Non-printable) */}
+          <div className="mb-3 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold rounded-lg flex items-center justify-between print:hidden select-none">
+            <span className="flex items-center gap-1.5">
+              <span>✏️</span>
+              <span><strong>Click-to-Edit Resume:</strong> Click on any text directly on this resume to edit it!</span>
+            </span>
+            <span className="text-[10px] bg-amber-200/60 px-2 py-0.5 rounded text-amber-900">Live Sync</span>
+          </div>
+
           {/* Header - Single Column ATS Optimized */}
           <header className="flex flex-col items-center text-center mb-2 print:mb-1.5">
-            <h1 className="text-[2.2em] font-black text-slate-900 leading-tight tracking-tight uppercase print:font-extrabold mb-0.5">
+            <h1
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => handleEditableBlur("name", e.currentTarget.innerText)}
+              className={`text-[2.2em] font-black text-slate-900 leading-tight tracking-tight uppercase print:font-extrabold mb-0.5 ${editableClass}`}
+            >
               {activeResume.name}
             </h1>
-            <p className="text-[1.1em] font-bold tracking-widest text-slate-600 uppercase mb-1.5">
+            <p
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => handleEditableBlur("title", e.currentTarget.innerText)}
+              className={`text-[1.1em] font-bold tracking-widest text-slate-600 uppercase mb-1.5 ${editableClass}`}
+            >
               {activeResume.title}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[0.95em] text-slate-700">
               {"location" in activeResume.contact && activeResume.contact.location && (
                 <span className="flex items-center gap-1">
                   <span className="text-slate-500"><MapPinIcon size={13} /></span>
-                  <span>{activeResume.contact.location}</span>
+                  <span
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleEditableBlur("contact.location", e.currentTarget.innerText)}
+                    className={editableClass}
+                  >
+                    {activeResume.contact.location}
+                  </span>
                 </span>
               )}
               {"phone" in activeResume.contact && activeResume.contact.phone && (
                 <>
                   <span className="text-slate-300">•</span>
-                  <a href={`tel:${activeResume.contact.phone.replace(/\s+/g, "")}`} className="flex items-center gap-1 text-slate-700 hover:text-slate-900 transition-colors decoration-transparent">
+                  <span className="flex items-center gap-1 text-slate-700 decoration-transparent">
                     <span className="text-slate-500"><PhoneIcon size={13} /></span>
-                    <span>{activeResume.contact.phone}</span>
-                  </a>
+                    <span
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => handleEditableBlur("contact.phone", e.currentTarget.innerText)}
+                      className={editableClass}
+                    >
+                      {activeResume.contact.phone}
+                    </span>
+                  </span>
                 </>
               )}
               <span className="text-slate-300">•</span>
-              <a href={`mailto:${activeResume.contact.email}`} className="flex items-center gap-1 text-slate-700 hover:text-slate-900 transition-colors decoration-transparent">
+              <span className="flex items-center gap-1 text-slate-700 decoration-transparent">
                 <span className="text-slate-500"><MailIcon size={13} /></span>
-                <span>{activeResume.contact.email}</span>
-              </a>
+                <span
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditableBlur("contact.email", e.currentTarget.innerText)}
+                  className={editableClass}
+                >
+                  {activeResume.contact.email}
+                </span>
+              </span>
               <span className="text-slate-300">•</span>
               <a href={activeResume.contact.linkedin} className="flex items-center gap-1 text-slate-700 hover:text-slate-900 transition-colors decoration-transparent" target="_blank" rel="noreferrer">
                 <span className="text-slate-500"><LinkedInIcon /></span>
-                <span>linkedin.com/in/sohail-islam</span>
+                <span
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditableBlur("contact.linkedin", e.currentTarget.innerText)}
+                  className={editableClass}
+                >
+                  {activeResume.contact.linkedin.replace(/^https?:\/\/(www\.)?/, "")}
+                </span>
               </a>
               <span className="text-slate-300">•</span>
               <a href={activeResume.contact.github} className="flex items-center gap-1 text-slate-700 hover:text-slate-900 transition-colors decoration-transparent" target="_blank" rel="noreferrer">
                 <span className="text-slate-500"><GitHubIcon /></span>
-                <span>github.com/sohail22dec</span>
+                <span
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditableBlur("contact.github", e.currentTarget.innerText)}
+                  className={editableClass}
+                >
+                  {activeResume.contact.github.replace(/^https?:\/\/(www\.)?/, "")}
+                </span>
               </a>
             </div>
           </header>
@@ -543,7 +713,14 @@ export default function App() {
             <h2 className="text-[1.05em] font-bold tracking-[0.1em] uppercase text-slate-900 border-b-2 border-slate-900 pb-0.5 mb-1 inline-block">
               Professional Summary
             </h2>
-            <p className="text-[1em] text-slate-700 text-justify">{activeResume.summary}</p>
+            <p
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => handleEditableBlur("summary", e.currentTarget.innerText)}
+              className={`text-[1em] text-slate-700 text-justify ${editableClass}`}
+            >
+              {activeResume.summary}
+            </p>
           </section>
 
           {/* Technical Skills */}
@@ -552,11 +729,26 @@ export default function App() {
               Technical Skills
             </h2>
             <div className="flex flex-col gap-1">
-              {activeResume.skills.map((skillGroup) => (
-                <div key={skillGroup.category} className="flex items-start gap-1.5 text-[0.98em]">
+              {activeResume.skills.map((skillGroup, sIdx) => (
+                <div key={sIdx} className="flex items-start gap-1.5 text-[0.98em]">
                   <span className="text-slate-500 font-bold select-none text-[0.9em] mt-[2px]">•</span>
-                  <span className="font-bold text-slate-800 shrink-0">{skillGroup.category}:</span>
-                  <span className="text-slate-700">{skillGroup.items.join(", ")}</span>
+                  <span
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleEditableBlur(`skillCat.${sIdx}`, e.currentTarget.innerText)}
+                    className={`font-bold text-slate-800 shrink-0 ${editableClass}`}
+                  >
+                    {skillGroup.category}
+                  </span>
+                  <span className="font-bold text-slate-800">:</span>
+                  <span
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleEditableBlur(`skillItems.${sIdx}`, e.currentTarget.innerText)}
+                    className={`text-slate-700 flex-1 ${editableClass}`}
+                  >
+                    {skillGroup.items.join(", ")}
+                  </span>
                 </div>
               ))}
             </div>
@@ -572,8 +764,23 @@ export default function App() {
                 <div key={idx} className="break-inside-avoid print:break-inside-avoid">
                   <div className="flex items-start justify-between gap-3 mb-0.5 flex-wrap">
                     <div className="flex items-baseline gap-2 flex-wrap">
-                      <h3 className="text-[1.12em] font-bold text-slate-900">{project.name}</h3>
-                      <span className="text-[1.02em] text-slate-600 font-medium">| {project.subtitle}</span>
+                      <h3
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleEditableBlur(`projName.${idx}`, e.currentTarget.innerText)}
+                        className={`text-[1.12em] font-bold text-slate-900 ${editableClass}`}
+                      >
+                        {project.name}
+                      </h3>
+                      <span className="text-[1.02em] text-slate-600 font-medium">|</span>
+                      <span
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleEditableBlur(`projSubtitle.${idx}`, e.currentTarget.innerText)}
+                        className={`text-[1.02em] text-slate-600 font-medium ${editableClass}`}
+                      >
+                        {project.subtitle}
+                      </span>
                     </div>
                     {project.demoUrl && (
                       <a
@@ -590,15 +797,29 @@ export default function App() {
                       </a>
                     )}
                   </div>
-                  <div className="mb-0.5">
-                    <span className="text-[0.95em] font-semibold text-slate-700 mr-1.5">Technologies:</span>
-                    <span className="text-[0.95em] text-slate-600 italic">{project.tech.join(", ")}</span>
+                  <div className="mb-0.5 flex items-baseline gap-1">
+                    <span className="text-[0.95em] font-semibold text-slate-700 shrink-0">Technologies:</span>
+                    <span
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => handleEditableBlur(`projTech.${idx}`, e.currentTarget.innerText)}
+                      className={`text-[0.95em] text-slate-600 italic ${editableClass}`}
+                    >
+                      {project.tech.join(", ")}
+                    </span>
                   </div>
                   <ul className="flex flex-col gap-0.5 list-none ml-0.5">
                     {project.bullets.map((bullet, bIdx) => (
                       <li key={bIdx} className="flex items-start gap-2 text-[1em] text-slate-700">
                         <span className="text-slate-600 font-bold select-none text-[11px] mt-[1px]">•</span>
-                        <span>{bullet}</span>
+                        <span
+                          contentEditable
+                          suppressContentEditableWarning
+                          onBlur={(e) => handleEditableBlur(`projBullet.${idx}.${bIdx}`, e.currentTarget.innerText)}
+                          className={`flex-1 ${editableClass}`}
+                        >
+                          {bullet}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -614,13 +835,48 @@ export default function App() {
             </h2>
             <div className="flex items-start justify-between gap-4 print:break-inside-avoid">
               <div className="flex-1">
-                <h3 className="text-[1.12em] font-bold text-slate-900 mb-0.5">{activeResume.education.degree}</h3>
-                <p className="text-[1.02em] text-slate-700 font-medium">{activeResume.education.institution}</p>
-                <p className="text-[0.95em] text-slate-600 mt-0.5">{activeResume.education.cgpa}</p>
+                <h3
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditableBlur("edu.degree", e.currentTarget.innerText)}
+                  className={`text-[1.12em] font-bold text-slate-900 mb-0.5 ${editableClass}`}
+                >
+                  {activeResume.education.degree}
+                </h3>
+                <p
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditableBlur("edu.institution", e.currentTarget.innerText)}
+                  className={`text-[1.02em] text-slate-700 font-medium ${editableClass}`}
+                >
+                  {activeResume.education.institution}
+                </p>
+                <p
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditableBlur("edu.cgpa", e.currentTarget.innerText)}
+                  className={`text-[0.95em] text-slate-600 mt-0.5 ${editableClass}`}
+                >
+                  {activeResume.education.cgpa}
+                </p>
               </div>
               <div className="flex flex-col items-end gap-0.5 shrink-0">
-                <span className="text-[1.02em] font-semibold text-slate-800">{activeResume.education.duration}</span>
-                <span className="text-[0.95em] text-slate-500">{activeResume.education.location}</span>
+                <span
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditableBlur("edu.duration", e.currentTarget.innerText)}
+                  className={`text-[1.02em] font-semibold text-slate-800 ${editableClass}`}
+                >
+                  {activeResume.education.duration}
+                </span>
+                <span
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleEditableBlur("edu.location", e.currentTarget.innerText)}
+                  className={`text-[0.95em] text-slate-500 ${editableClass}`}
+                >
+                  {activeResume.education.location}
+                </span>
               </div>
             </div>
           </section>

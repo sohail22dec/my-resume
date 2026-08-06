@@ -20,6 +20,8 @@ export const resumeData = {
       items: [
         "LangGraph",
         "LangChain",
+        "Local Hugging Face LLMs",
+        "LoRA Fine-Tuning",
         "OpenAI API",
         "Gemini API",
         "Prompt Engineering",
@@ -50,7 +52,9 @@ export const resumeData = {
       items: [
         "PostgreSQL",
         "Supabase",
+        "AWS",
         "Docker",
+        "CI/CD",
         "Git",
       ],
     },
