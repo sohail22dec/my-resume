@@ -21,7 +21,6 @@ export const resumeData = {
         "LangGraph",
         "LangChain",
         "Local Hugging Face LLMs",
-        "LoRA Fine-Tuning",
         "OpenAI API",
         "Gemini API",
         "Prompt Engineering",
