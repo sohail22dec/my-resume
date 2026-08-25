@@ -3,6 +3,7 @@ import type { ResumeDataType } from "./resumeData";
 export interface TailorResponse {
   title: string;
   summary: string;
+  targetRole?: string;
   skills: { category: string; items: string[] }[];
   projects: {
     name: string;
