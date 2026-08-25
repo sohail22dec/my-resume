@@ -1,10 +1,28 @@
 import { useRef, useState, useEffect } from "react";
 import { resumeData } from "./resumeData";
 import type { ResumeDataType } from "./resumeData";
-import { LinkedInIcon, GitHubIcon, MailIcon, PhoneIcon, MapPinIcon, PrinterIcon, ExternalLinkIcon } from "./icons";
+import {
+  LinkedInIcon,
+  GitHubIcon,
+  MailIcon,
+  PhoneIcon,
+  MapPinIcon,
+  PrinterIcon,
+  ExternalLinkIcon,
+  PanelLeftIcon,
+  SparklesIcon,
+  Edit3Icon,
+  ChevronLeftIcon,
+  RefreshCwIcon,
+  BotIcon,
+} from "./icons";
 import { tailorResumeWithAI, ALL_AI_MODELS } from "./aiTailor";
 import type { TailorResponse } from "./aiTailor";
 import { ResumeEditorPanel } from "./ResumeEditorPanel";
+import { Button } from "./components/ui/button";
+import { Badge } from "./components/ui/badge";
+import { Input } from "./components/ui/input";
+import { Textarea } from "./components/ui/textarea";
 
 const getCleanDomain = (url: string) => {
   try {
@@ -16,6 +34,9 @@ const getCleanDomain = (url: string) => {
 
 export default function App() {
   const resumeRef = useRef<HTMLDivElement>(null);
+
+  // Sidebar Toggle State (Open by default on desktop)
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
   // Active Tab State ('ai' or 'edit')
   const [activeTab, setActiveTab] = useState<"ai" | "edit">("ai");
@@ -34,15 +55,31 @@ export default function App() {
   const [paddingX, setPaddingX] = useState<number>(40);
 
   // AI State
-  const [userGroqKey, setUserGroqKey] = useState<string>("");
-  const [userGeminiKey, setUserGeminiKey] = useState<string>("");
+  const [userGroqKey, setUserGroqKey] = useState<string>(
+    () => localStorage.getItem("groq_api_key") || ""
+  );
+  const [userGeminiKey, setUserGeminiKey] = useState<string>(
+    () => localStorage.getItem("gemini_api_key") || ""
+  );
   const [selectedModel, setSelectedModel] = useState<string>("openai/gpt-oss-120b");
   const [jobDescription, setJobDescription] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isAiPanelCollapsed, setIsAiPanelCollapsed] = useState<boolean>(false);
 
-  const editableClass = "outline-none rounded px-1 transition-all cursor-text hover:bg-amber-50 hover:ring-1 hover:ring-amber-400 focus:bg-amber-50 focus:ring-2 focus:ring-purple-500 print:hover:bg-transparent print:hover:ring-0 print:focus:ring-0";
+  // Keyboard shortcut Ctrl+B / Cmd+B to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        setIsSidebarOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const editableClass =
+    "outline-none rounded px-1 transition-all cursor-text hover:bg-amber-50 hover:ring-1 hover:ring-amber-400 focus:bg-amber-50 focus:ring-2 focus:ring-zinc-900 print:hover:bg-transparent print:hover:ring-0 print:focus:ring-0";
 
   const handleEditableBlur = (fieldPath: string, newValue: string) => {
     const trimmed = newValue.trim();
@@ -113,13 +150,6 @@ export default function App() {
   const hasEnvGroq = Boolean(import.meta.env.VITE_GROQ_API_KEY);
   const hasEnvGemini = Boolean(import.meta.env.VITE_GEMINI_API_KEY);
 
-  useEffect(() => {
-    const savedGroq = localStorage.getItem("groq_api_key");
-    const savedGemini = localStorage.getItem("gemini_api_key");
-    if (savedGroq) setUserGroqKey(savedGroq);
-    if (savedGemini) setUserGeminiKey(savedGemini);
-  }, []);
-
   const handlePrint = () => {
     window.print();
   };
@@ -160,23 +190,25 @@ export default function App() {
         title: tailored.title || resumeData.title,
         summary: tailored.summary || resumeData.summary,
         skills: tailored.skills && tailored.skills.length > 0 ? tailored.skills : resumeData.skills,
-        projects: tailored.projects && tailored.projects.length > 0
-          ? tailored.projects.map((p, idx) => ({
-            ...resumeData.projects[idx],
-            name: p.name || resumeData.projects[idx]?.name || "",
-            subtitle: p.subtitle || resumeData.projects[idx]?.subtitle || "",
-            tech: p.tech || resumeData.projects[idx]?.tech || [],
-            bullets: p.bullets || resumeData.projects[idx]?.bullets || [],
-          }))
-          : resumeData.projects,
+        projects:
+          tailored.projects && tailored.projects.length > 0
+            ? tailored.projects.map((p, idx) => ({
+                ...resumeData.projects[idx],
+                name: p.name || resumeData.projects[idx]?.name || "",
+                subtitle: p.subtitle || resumeData.projects[idx]?.subtitle || "",
+                tech: p.tech || resumeData.projects[idx]?.tech || [],
+                bullets: p.bullets || resumeData.projects[idx]?.bullets || [],
+              }))
+            : resumeData.projects,
       });
 
       setIsTailored(true);
       setTailoredRole(tailored.title);
       setIsLoading(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsLoading(false);
-      setErrorMsg(err.message || "Failed to tailor resume with AI.");
+      const message = err instanceof Error ? err.message : "Failed to tailor resume with AI.";
+      setErrorMsg(message);
     }
   };
 
@@ -187,40 +219,62 @@ export default function App() {
     setErrorMsg(null);
   };
 
-  const currentSelectedOption = ALL_AI_MODELS.find((m) => m.id === selectedModel) || ALL_AI_MODELS[0];
+  const currentSelectedOption =
+    ALL_AI_MODELS.find((m) => m.id === selectedModel) || ALL_AI_MODELS[0];
 
   return (
-    <div className="min-h-screen flex flex-col items-center pb-[80px] bg-slate-100 text-slate-900 font-sans print:bg-white print:pb-0 relative">
+    <div className="min-h-screen flex flex-col items-center pb-[80px] bg-zinc-100/70 text-zinc-900 font-sans print:bg-white print:pb-0 relative">
+      {/* Top Header Bar with Shadcn Zinc Styling */}
+      <header className="w-full bg-white/95 backdrop-blur-md border-b border-zinc-200 shadow-xs sticky top-0 z-40 print:hidden transition-all">
+        <div className="max-w-[1700px] mx-auto px-3 sm:px-6 py-2.5 flex flex-col lg:flex-row items-center justify-between gap-3">
+          {/* Brand & Sidebar Toggle */}
+          <div className="flex items-center justify-between w-full lg:w-auto gap-3 shrink-0">
+            <div className="flex items-center gap-2.5">
+              {/* Sidebar Toggle Button */}
+              <Button
+                variant={isSidebarOpen ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIsSidebarOpen((prev) => !prev)}
+                title="Toggle Sidebar (Ctrl+B / ⌘B)"
+              >
+                <PanelLeftIcon size={15} />
+                <span className="hidden sm:inline">
+                  {isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+                </span>
+                <kbd className="hidden md:inline-block ml-1 px-1 py-0.2 bg-zinc-800 text-[10px] text-zinc-300 rounded font-mono border border-zinc-700">
+                  ⌘B
+                </kbd>
+              </Button>
 
-      {/* Top Header Bar with Mobile-Optimized Spacing Controls & Download PDF */}
-      <div className="w-full bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40 print:hidden">
-        <div className="max-w-[1550px] mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex flex-col lg:flex-row items-center justify-between gap-3">
-          
-          {/* Brand Badge & Status */}
-          <div className="flex items-center justify-between w-full lg:w-auto gap-2 shrink-0">
-            <span className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">✨ Agentic AI Resume</span>
-            {isTailored ? (
-              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-bold border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Tailored</span>
-              </div>
-            ) : (
-              <span className="text-[10px] sm:text-[11px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md font-bold border border-purple-200">
-                Groq & Gemini AI
+              <span className="text-xs sm:text-sm font-extrabold text-zinc-900 tracking-tight flex items-center gap-1.5">
+                <SparklesIcon size={15} className="text-indigo-600" />
+                <span>Agentic AI Resume</span>
               </span>
+            </div>
+
+            {/* Status Badge */}
+            {isTailored ? (
+              <Badge variant="success">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Tailored</span>
+              </Badge>
+            ) : (
+              <Badge variant="ai">
+                <BotIcon size={12} />
+                <span>Groq & Gemini</span>
+              </Badge>
             )}
           </div>
 
-          {/* Touch-Optimized Spacing Stepper Controls (Plus/Minus Buttons + Direct Editable Number Input) */}
-          <div className="w-full lg:w-auto grid grid-cols-2 md:grid-cols-4 lg:flex items-center justify-between gap-2.5 bg-slate-50 border border-slate-200 p-2 sm:px-3 sm:py-1.5 rounded-xl shadow-inner text-xs">
-            
+          {/* Touch-Optimized Spacing Stepper Controls */}
+          <div className="w-full lg:w-auto grid grid-cols-2 md:grid-cols-4 lg:flex items-center justify-between gap-2 bg-zinc-100/90 border border-zinc-200 p-1.5 sm:px-2.5 sm:py-1 rounded-xl shadow-2xs text-xs">
             {/* Font Size Stepper */}
-            <div className="flex items-center justify-between gap-1 bg-white border border-slate-200 p-1 sm:p-1.5 rounded-lg shadow-2xs">
-              <span className="font-bold text-slate-700 text-[11px] sm:text-xs shrink-0 pl-0.5">🔤 Font:</span>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-1 bg-white border border-zinc-200 p-1 rounded-lg shadow-2xs">
+              <span className="font-bold text-zinc-700 text-[11px] shrink-0 pl-1">🔤 Font:</span>
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => setFontSize((prev) => Math.max(9.5, parseFloat((prev - 0.5).toFixed(1))))}
-                  className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded text-xs transition-colors cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded text-xs transition-colors cursor-pointer"
                   title="Decrease Font Size"
                 >
                   −
@@ -235,11 +289,11 @@ export default function App() {
                     const val = parseFloat(e.target.value);
                     if (!isNaN(val)) setFontSize(val);
                   }}
-                  className="w-12 text-center font-extrabold text-slate-900 bg-slate-50 border border-slate-200 rounded py-0.5 text-[11px] sm:text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none"
+                  className="w-11 text-center font-bold text-zinc-900 bg-zinc-50 border border-zinc-200 rounded py-0.5 text-[11px] focus:ring-1 focus:ring-zinc-900 focus:outline-none"
                 />
                 <button
                   onClick={() => setFontSize((prev) => Math.min(14.5, parseFloat((prev + 0.5).toFixed(1))))}
-                  className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded text-xs transition-colors cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded text-xs transition-colors cursor-pointer"
                   title="Increase Font Size"
                 >
                   ＋
@@ -248,12 +302,12 @@ export default function App() {
             </div>
 
             {/* Line Height Stepper */}
-            <div className="flex items-center justify-between gap-1 bg-white border border-slate-200 p-1 sm:p-1.5 rounded-lg shadow-2xs">
-              <span className="font-bold text-slate-700 text-[11px] sm:text-xs shrink-0 pl-0.5">↕️ Height:</span>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-1 bg-white border border-zinc-200 p-1 rounded-lg shadow-2xs">
+              <span className="font-bold text-zinc-700 text-[11px] shrink-0 pl-1">↕️ Height:</span>
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => setLineHeight((prev) => Math.max(1.1, parseFloat((prev - 0.05).toFixed(2))))}
-                  className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded text-xs transition-colors cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded text-xs transition-colors cursor-pointer"
                   title="Decrease Line Height"
                 >
                   −
@@ -268,11 +322,11 @@ export default function App() {
                     const val = parseFloat(e.target.value);
                     if (!isNaN(val)) setLineHeight(val);
                   }}
-                  className="w-12 text-center font-extrabold text-slate-900 bg-slate-50 border border-slate-200 rounded py-0.5 text-[11px] sm:text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none"
+                  className="w-11 text-center font-bold text-zinc-900 bg-zinc-50 border border-zinc-200 rounded py-0.5 text-[11px] focus:ring-1 focus:ring-zinc-900 focus:outline-none"
                 />
                 <button
                   onClick={() => setLineHeight((prev) => Math.min(1.6, parseFloat((prev + 0.05).toFixed(2))))}
-                  className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded text-xs transition-colors cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded text-xs transition-colors cursor-pointer"
                   title="Increase Line Height"
                 >
                   ＋
@@ -281,9 +335,9 @@ export default function App() {
             </div>
 
             {/* Section Gap Stepper */}
-            <div className="flex items-center justify-between gap-1 bg-white border border-slate-200 p-1 sm:p-1.5 rounded-lg shadow-2xs">
-              <span className="font-bold text-slate-700 text-[11px] sm:text-xs shrink-0 pl-0.5">📏 Gap:</span>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-1 bg-white border border-zinc-200 p-1 rounded-lg shadow-2xs">
+              <span className="font-bold text-zinc-700 text-[11px] shrink-0 pl-1">📏 Gap:</span>
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => {
                     setSectionGap((prev) => {
@@ -292,7 +346,7 @@ export default function App() {
                       return next;
                     });
                   }}
-                  className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded text-xs transition-colors cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded text-xs transition-colors cursor-pointer"
                   title="Decrease Section Gap"
                 >
                   −
@@ -310,7 +364,7 @@ export default function App() {
                       setProjectGap(Math.round(val * 0.75));
                     }
                   }}
-                  className="w-11 text-center font-extrabold text-slate-900 bg-slate-50 border border-slate-200 rounded py-0.5 text-[11px] sm:text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none"
+                  className="w-10 text-center font-bold text-zinc-900 bg-zinc-50 border border-zinc-200 rounded py-0.5 text-[11px] focus:ring-1 focus:ring-zinc-900 focus:outline-none"
                 />
                 <button
                   onClick={() => {
@@ -320,7 +374,7 @@ export default function App() {
                       return next;
                     });
                   }}
-                  className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded text-xs transition-colors cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded text-xs transition-colors cursor-pointer"
                   title="Increase Section Gap"
                 >
                   ＋
@@ -329,9 +383,9 @@ export default function App() {
             </div>
 
             {/* Padding Stepper */}
-            <div className="flex items-center justify-between gap-1 bg-white border border-slate-200 p-1 sm:p-1.5 rounded-lg shadow-2xs">
-              <span className="font-bold text-slate-700 text-[11px] sm:text-xs shrink-0 pl-0.5">🖼️ Pad:</span>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-1 bg-white border border-zinc-200 p-1 rounded-lg shadow-2xs">
+              <span className="font-bold text-zinc-700 text-[11px] shrink-0 pl-1">🖼️ Pad:</span>
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => {
                     setPaddingY((prev) => {
@@ -340,7 +394,7 @@ export default function App() {
                       return next;
                     });
                   }}
-                  className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded text-xs transition-colors cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded text-xs transition-colors cursor-pointer"
                   title="Decrease Padding"
                 >
                   −
@@ -358,7 +412,7 @@ export default function App() {
                       setPaddingX(Math.round(val * 1.25));
                     }
                   }}
-                  className="w-11 text-center font-extrabold text-slate-900 bg-slate-50 border border-slate-200 rounded py-0.5 text-[11px] sm:text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none"
+                  className="w-10 text-center font-bold text-zinc-900 bg-zinc-50 border border-zinc-200 rounded py-0.5 text-[11px] focus:ring-1 focus:ring-zinc-900 focus:outline-none"
                 />
                 <button
                   onClick={() => {
@@ -368,119 +422,151 @@ export default function App() {
                       return next;
                     });
                   }}
-                  className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded text-xs transition-colors cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded text-xs transition-colors cursor-pointer"
                   title="Increase Padding"
                 >
                   ＋
                 </button>
               </div>
             </div>
-
           </div>
 
           {/* Action Header Buttons: Reset & Download PDF */}
           <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleResetResume}
-              className="flex-1 lg:flex-none flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-2xs"
               title="Reset resume to original master data"
             >
-              <span>🔄 Reset to Original</span>
-            </button>
-            <button
-              className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white border-none px-5 py-2 sm:py-2 rounded-lg text-xs font-bold cursor-pointer transition-all hover:bg-slate-800 tracking-wide shadow-sm"
+              <RefreshCwIcon size={13} />
+              <span>Reset</span>
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
               onClick={handlePrint}
             >
-              <PrinterIcon size={16} />
-              Download / Print PDF
-            </button>
+              <PrinterIcon size={15} />
+              <span>Download PDF</span>
+            </Button>
           </div>
-
         </div>
-      </div>
+      </header>
 
-      {/* Dual-Pane Side-by-Side Main Container */}
-      <div className="w-full max-w-[1550px] mx-auto px-4 md:px-6 my-6 flex flex-col xl:flex-row items-start justify-center gap-6 print:m-0 print:p-0 print:block">
+      {/* Main Layout Area */}
+      <div className="w-full max-w-[1700px] mx-auto px-2 sm:px-4 my-4 sm:my-6 flex items-start justify-center gap-6 relative print:m-0 print:p-0 print:block">
+        {/* Mobile / Tablet Drawer Backdrop */}
+        {isSidebarOpen && (
+          <div
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-zinc-950/40 backdrop-blur-xs z-40 xl:hidden print:hidden"
+          />
+        )}
 
-        {/* Left Side: AI Resume Tailor Panel (Sticky & Viewport Bounded on large screens - Bigger Mode) */}
-        <div className="w-full xl:w-[480px] bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden shrink-0 print:hidden xl:sticky xl:top-[68px] xl:max-h-[calc(100vh-80px)] flex flex-col">
-
-          {/* Panel Header */}
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-5 py-3.5 flex items-center justify-between shrink-0 select-none">
-            <div className="flex items-center gap-2">
-              <span className="text-base">{activeTab === "ai" ? "✨" : "✏️"}</span>
-              <h2 className="text-sm font-extrabold tracking-tight">
-                {activeTab === "ai" ? "AI Resume Tailor" : "Resume UI Editor"}
-              </h2>
+        {/* Toggleable Sidebar (Desktop Docked or Slide-Out + Mobile Off-Canvas Drawer) */}
+        <aside
+          className={`
+            fixed xl:sticky top-0 xl:top-[68px] left-0 z-50 xl:z-20 h-full xl:h-[calc(100vh-88px)]
+            bg-white border-r xl:border border-zinc-200 xl:rounded-2xl shadow-2xl xl:shadow-lg
+            transition-all duration-300 ease-in-out shrink-0 print:hidden flex flex-col overflow-hidden
+            ${
+              isSidebarOpen
+                ? "w-[92vw] sm:w-[460px] xl:w-[460px] translate-x-0 opacity-100"
+                : "w-0 -translate-x-full xl:translate-x-0 xl:w-0 xl:p-0 xl:border-0 opacity-0 pointer-events-none"
+            }
+          `}
+        >
+          {/* Sidebar Header (Shadcn Style) */}
+          <div className="bg-zinc-950 text-white px-4 py-3 flex items-center justify-between shrink-0 border-b border-zinc-800 select-none">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-400/30">
+                {activeTab === "ai" ? <SparklesIcon size={16} /> : <Edit3Icon size={16} />}
+              </div>
+              <div>
+                <h2 className="text-xs font-bold text-zinc-100 leading-none">
+                  {activeTab === "ai" ? "AI Resume Tailor" : "Resume UI Editor"}
+                </h2>
+                <span className="text-[10px] text-zinc-400 font-medium">
+                  {activeTab === "ai" ? "ATS Keyword Alignment" : "Interactive Field Editor"}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1.5">
+
+            <div className="flex items-center gap-1.5">
+              <Badge variant="success">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>Live Sync</span>
-              </span>
+              </Badge>
+
+              {/* Close Button */}
               <button
-                onClick={() => setIsAiPanelCollapsed(!isAiPanelCollapsed)}
-                className="text-slate-400 hover:text-white font-extrabold text-sm px-2 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
-                title={isAiPanelCollapsed ? "Expand Panel" : "Minimize Panel"}
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-1 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Collapse Sidebar"
               >
-                {isAiPanelCollapsed ? "＋" : "−"}
+                <ChevronLeftIcon size={18} />
               </button>
             </div>
           </div>
 
-          {/* Tab Navigation Switcher */}
-          {!isAiPanelCollapsed && (
-            <div className="flex border-b border-slate-200 bg-slate-100 text-xs font-bold shrink-0">
+          {/* Shadcn-Style Segmented Tabs */}
+          <div className="p-2.5 bg-zinc-50 border-b border-zinc-200 shrink-0">
+            <div className="grid grid-cols-2 p-1 bg-zinc-200/80 rounded-lg text-xs font-semibold">
               <button
                 onClick={() => setActiveTab("ai")}
-                className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
+                className={`py-1.5 px-3 flex items-center justify-center gap-1.5 rounded-md transition-all cursor-pointer ${
                   activeTab === "ai"
-                    ? "border-purple-600 text-purple-700 bg-white"
-                    : "border-transparent text-slate-600 hover:text-slate-900"
+                    ? "bg-white text-zinc-900 shadow-xs font-bold"
+                    : "text-zinc-600 hover:text-zinc-900"
                 }`}
               >
-                <span>🤖 AI Tailor</span>
+                <SparklesIcon size={13} />
+                <span>AI Tailor</span>
               </button>
               <button
                 onClick={() => setActiveTab("edit")}
-                className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
+                className={`py-1.5 px-3 flex items-center justify-center gap-1.5 rounded-md transition-all cursor-pointer ${
                   activeTab === "edit"
-                    ? "border-purple-600 text-purple-700 bg-white"
-                    : "border-transparent text-slate-600 hover:text-slate-900"
+                    ? "bg-white text-zinc-900 shadow-xs font-bold"
+                    : "text-zinc-600 hover:text-zinc-900"
                 }`}
               >
-                <span>✏️ Edit Resume (UI)</span>
+                <Edit3Icon size={13} />
+                <span>UI Editor</span>
               </button>
             </div>
-          )}
+          </div>
 
-          {/* Panel Body (Collapsible - Bigger Mode) */}
-          {!isAiPanelCollapsed && (
-            activeTab === "ai" ? (
-              <div className="p-5 space-y-4 text-xs overflow-y-auto flex-1">
-
+          {/* Sidebar Body Content */}
+          <div className="flex-1 overflow-y-auto bg-white">
+            {activeTab === "ai" ? (
+              <div className="p-4 space-y-4 text-xs">
                 {/* 1. Model Selector */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-slate-800 text-xs">1. Select AI Model:</label>
-                    <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                    <label className="font-bold text-zinc-800 text-xs flex items-center gap-1.5">
+                      <BotIcon size={14} />
+                      <span>1. Select AI Model:</span>
+                    </label>
+                    <Badge variant={currentSelectedOption.provider === "groq" ? "secondary" : "ai"}>
                       {currentSelectedOption.provider === "groq" ? "⚡ Groq LPU" : "✨ Gemini"}
-                    </span>
+                    </Badge>
                   </div>
                   <select
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-bold text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer shadow-2xs"
+                    className="w-full p-2.5 bg-zinc-50 border border-zinc-300 rounded-lg text-zinc-900 font-bold text-xs focus:ring-2 focus:ring-zinc-900 focus:outline-none cursor-pointer shadow-2xs"
                   >
                     <optgroup label="⚡ Groq Models (Ultra-Fast LPUs)">
-                      {ALL_AI_MODELS.filter(m => m.provider === "groq").map((m) => (
+                      {ALL_AI_MODELS.filter((m) => m.provider === "groq").map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name}
                         </option>
                       ))}
                     </optgroup>
                     <optgroup label="✨ Google Gemini Models">
-                      {ALL_AI_MODELS.filter(m => m.provider === "gemini").map((m) => (
+                      {ALL_AI_MODELS.filter((m) => m.provider === "gemini").map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name}
                         </option>
@@ -490,27 +576,34 @@ export default function App() {
                 </div>
 
                 {/* Manual Key override if .env keys missing */}
-                {(!hasEnvGroq && currentSelectedOption.provider === "groq") || (!hasEnvGemini && currentSelectedOption.provider === "gemini") ? (
+                {(!hasEnvGroq && currentSelectedOption.provider === "groq") ||
+                (!hasEnvGemini && currentSelectedOption.provider === "gemini") ? (
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-700">Enter API Key:</label>
-                    <input
+                    <label className="font-bold text-zinc-700">Enter API Key:</label>
+                    <Input
                       type="password"
                       placeholder="Paste Key Here..."
                       value={currentSelectedOption.provider === "groq" ? userGroqKey : userGeminiKey}
-                      onChange={(e) => currentSelectedOption.provider === "groq" ? handleSaveGroqKey(e.target.value) : handleSaveGeminiKey(e.target.value)}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                      onChange={(e) =>
+                        currentSelectedOption.provider === "groq"
+                          ? handleSaveGroqKey(e.target.value)
+                          : handleSaveGeminiKey(e.target.value)
+                      }
+                      className="font-mono"
                     />
                   </div>
                 ) : null}
 
-                {/* 2. Job Description Textarea - Bigger Mode */}
+                {/* 2. Job Description Textarea */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-slate-800 text-xs">2. Paste Job Description (JD):</label>
+                    <label className="font-bold text-zinc-800 text-xs">
+                      2. Paste Job Description (JD):
+                    </label>
                     <div className="flex items-center gap-2">
                       {jobDescription.length > 0 && (
                         <>
-                          <span className="text-[11px] text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          <span className="text-[10px] text-zinc-500 font-semibold bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200">
                             {jobDescription.length} chars
                           </span>
                           <button
@@ -523,21 +616,21 @@ export default function App() {
                       )}
                     </div>
                   </div>
-                  <textarea
-                    rows={10}
-                    placeholder="Paste job description text from LinkedIn, Internshala, TARS, or any hiring portal here..."
+                  <Textarea
+                    rows={8}
+                    placeholder="Paste job description text from LinkedIn, Internshala, Wellfound, or company portals here..."
                     value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
-                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 leading-relaxed text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none resize-y min-h-[220px] max-h-[380px] shadow-inner font-sans"
+                    className="min-h-[180px] max-h-[360px] bg-zinc-50 border-zinc-300"
                   />
                 </div>
 
-                {/* 3. Action Buttons */}
+                {/* 3. Action Button */}
                 <div className="pt-1 space-y-2">
-                  <button
+                  <Button
                     disabled={isLoading}
                     onClick={handleRunAiTailor}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white p-3.5 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 text-xs tracking-wide"
+                    className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2.5 rounded-xl shadow-md cursor-pointer disabled:opacity-50"
                   >
                     {isLoading ? (
                       <>
@@ -546,25 +639,29 @@ export default function App() {
                       </>
                     ) : (
                       <>
-                        <span>🚀 Tailor Resume with AI</span>
+                        <SparklesIcon size={15} />
+                        <span>Tailor Resume with AI</span>
                       </>
                     )}
-                  </button>
+                  </Button>
 
                   {isTailored && (
-                    <button
+                    <Button
+                      variant="outline"
                       onClick={handleResetResume}
-                      className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg font-bold transition-colors cursor-pointer text-xs"
+                      className="w-full"
                     >
-                      🔄 Reset to Original Resume
-                    </button>
+                      <RefreshCwIcon size={13} />
+                      <span>Reset to Original Resume</span>
+                    </Button>
                   )}
                 </div>
 
                 {/* Error / Success Notifications */}
                 {errorMsg && (
                   <div className="bg-red-50 border border-red-200 text-red-700 p-2.5 rounded-lg text-[11px]">
-                    <span className="font-bold">⚠️ Error: </span>{errorMsg}
+                    <span className="font-bold">⚠️ Error: </span>
+                    {errorMsg}
                   </div>
                 )}
 
@@ -574,10 +671,11 @@ export default function App() {
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                       <span>Tailored for: {tailoredRole}</span>
                     </div>
-                    <p className="text-[10px] text-emerald-700 mt-0.5">Resume updated live on the right 👉</p>
+                    <p className="text-[10px] text-emerald-700 mt-0.5">
+                      Resume updated live on the canvas 👉
+                    </p>
                   </div>
                 )}
-
               </div>
             ) : (
               <ResumeEditorPanel
@@ -585,9 +683,12 @@ export default function App() {
                 onChange={(updated) => setActiveResume(updated)}
                 onReset={handleResetResume}
               />
-            )
-          )}
-        </div>
+            )}
+          </div>
+        </aside>
+
+        {/* Right / Center Canvas: Live Resume Preview */}
+        <main className="flex-1 flex justify-center w-full min-w-0 transition-all duration-300">
 
         {/* Right Side: Live Resume Container */}
         <div
@@ -882,9 +983,11 @@ export default function App() {
           </section>
 
         </div>
+        </main>
 
       </div>
 
     </div>
   );
 }
+

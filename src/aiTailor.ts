@@ -1,3 +1,5 @@
+import type { ResumeDataType } from "./resumeData";
+
 export interface TailorResponse {
   title: string;
   summary: string;
@@ -66,7 +68,7 @@ export async function tailorResumeWithAI(
   modelId: string = "openai/gpt-oss-120b",
   userGroqKey?: string,
   userGeminiKey?: string,
-  baseResume?: any
+  baseResume?: ResumeDataType
 ): Promise<TailorResponse> {
   if (!jobDescription || !jobDescription.trim()) {
     throw new Error("Please paste a target Job Description (JD).");
@@ -96,7 +98,7 @@ async function callGroqApi(
   jobDescription: string,
   apiKey: string,
   modelId: string,
-  baseResume: any
+  baseResume?: ResumeDataType
 ): Promise<TailorResponse> {
   const endpoint = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -142,7 +144,7 @@ async function callGeminiApi(
   jobDescription: string,
   apiKey: string,
   modelId: string,
-  baseResume: any
+  baseResume?: ResumeDataType
 ): Promise<TailorResponse> {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey.trim()}`;
 

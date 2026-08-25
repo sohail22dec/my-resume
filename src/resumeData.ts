@@ -1,6 +1,6 @@
 export const resumeData = {
   name: "Sohail Islam",
-  title: "Agentic AI Engineer | Multi-Agent Systems & RAG Architect",
+  title: "Generative AI Engineer | Agentic AI & LLM Applications",
   contact: {
     email: "sohelsilamblg01@gmail.com",
     phone: "+91 70733 67227",
@@ -9,7 +9,7 @@ export const resumeData = {
     github: "https://github.com/sohail22dec?tab=repositories",
   },
   summary:
-    "Agentic AI Engineer specializing in building multi-agent systems, autonomous AI agents, and Agentic RAG applications using LangGraph, FastAPI, and Python. Experienced in designing agent orchestration, tool calling, vector retrieval pipelines, and LLM evaluation guardrails (LangSmith, Self-RAG). Built and deployed live AI platforms—including healthcare triage assistants, deep research agents, and document intelligence systems—with a focus on low latency, high response groundedness, and backend reliability.",
+    "Generative AI & Agentic AI Engineer specializing in building production-grade LLM applications, multi-agent workflows, and Agentic RAG systems using LangGraph, FastAPI, and Python. Experienced in agent orchestration, autonomous tool calling, vector retrieval architectures, and fine-tuning open-source LLMs (PEFT, QLoRA, SFT) with PyTorch and Hugging Face. Proven track record of architecting and deploying end-to-end AI platforms—including healthcare triage assistants, autonomous research agents, and hallucination-guarded RAG pipelines—with robust evaluation guardrails (LangSmith, Self-RAG), sub-second latency, and backend reliability.",
   skills: [
     {
       category: "Languages",
@@ -35,6 +35,16 @@ export const resumeData = {
         "Vector Search (pgvector)",
         "LangSmith",
         "Ragas",
+      ],
+    },
+    {
+      category: "LLM Fine-Tuning & Optimization",
+      items: [
+        "QLoRA & LoRA",
+        "SFT (Supervised Fine-Tuning)",
+        "Hugging Face (PEFT, Accelerate)",
+        "4-bit/8-bit Quantization",
+        "PyTorch"
       ],
     },
     {
