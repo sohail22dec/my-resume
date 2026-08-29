@@ -1,4 +1,45 @@
-export const resumeData = {
+export interface ProjectItem {
+  name: string;
+  subtitle: string;
+  demoUrl?: string;
+  videoUrl?: string;
+  docUrl?: string;
+  tech: string[];
+  bullets: string[];
+}
+
+export interface SkillCategory {
+  category: string;
+  items: string[];
+}
+
+export interface ContactInfo {
+  email: string;
+  phone: string;
+  location: string;
+  linkedin: string;
+  github: string;
+}
+
+export interface EducationInfo {
+  degree: string;
+  institution: string;
+  duration: string;
+  location: string;
+  cgpa: string;
+}
+
+export interface ResumeDataType {
+  name: string;
+  title: string;
+  contact: ContactInfo;
+  summary: string;
+  skills: SkillCategory[];
+  projects: ProjectItem[];
+  education: EducationInfo;
+}
+
+export const resumeData: ResumeDataType = {
   name: "Sohal Islam",
   title: "AI Engineer | Agentic Systems & LLMs",
   contact: {
@@ -72,7 +113,7 @@ export const resumeData = {
     {
       name: "DataPilot",
       subtitle: "Autonomous Text-to-SQL & Business Data Intelligence Platform",
-      demoUrl: "http://3.25.64.38:3001/",
+      demoUrl: "https://datapilot.duckdns.org",
       videoUrl: "https://lnkd.in/p/dgYMyS9t",
       tech: [
         "LangGraph StateGraph",
@@ -93,7 +134,7 @@ export const resumeData = {
     {
       name: "Cortex",
       subtitle: "Multi-Agent Corrective RAG (CRAG) & Evaluation Guardrails Platform",
-      demoUrl: "http://3.25.64.38:3001",
+      demoUrl: "https://cortex-ai.duckdns.org",
       tech: [
         "LangGraph",
         "Corrective RAG (CRAG)",
@@ -139,5 +180,3 @@ export const resumeData = {
     cgpa: "CGPA: 8.5",
   },
 };
-
-export type ResumeDataType = typeof resumeData;

@@ -53,6 +53,15 @@ export function App() {
         const saved = localStorage.getItem("saved_resume_data");
         if (saved) {
           const parsed = JSON.parse(saved);
+          const hasOldProjects = parsed.projects?.some(
+            (p: { name: string; demoUrl?: string }) =>
+              p.name?.includes("DocMatch") || p.name?.includes("Kraya") || p.demoUrl?.includes("3000")
+          );
+          if (hasOldProjects) {
+            localStorage.removeItem("saved_resume_data");
+            localStorage.removeItem("resume_is_customized");
+            return resumeData;
+          }
           if (parsed?.name && parsed?.contact && parsed?.skills && parsed?.projects) {
             return parsed;
           }
@@ -63,32 +72,6 @@ export function App() {
     }
     return resumeData;
   });
-
-  // Keep state in sync with resumeData.ts unless customized by user in UI
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("saved_resume_data");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const hasOldProjects = parsed.projects?.some(
-          (p: { name: string; demoUrl?: string }) =>
-            p.name.includes("DocMatch") || p.name.includes("Kraya") || p.demoUrl?.includes("3000")
-        );
-        if (hasOldProjects) {
-          localStorage.removeItem("saved_resume_data");
-          localStorage.removeItem("resume_is_customized");
-          setActiveResume(resumeData);
-          return;
-        }
-      }
-    } catch {
-      // ignore
-    }
-    const isCustomized = localStorage.getItem("resume_is_customized");
-    if (isCustomized !== "true") {
-      setActiveResume(resumeData);
-    }
-  }, []);
 
   // Dynamic Spacing Configuration
   const [spacing, setSpacing] = useState<SpacingConfig>({

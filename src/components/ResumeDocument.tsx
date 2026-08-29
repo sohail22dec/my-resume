@@ -18,17 +18,9 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
   const { fontSize, lineHeight, sectionGap, projectGap, paddingX, paddingY } =
     spacing;
 
+
   const editableClass =
     "focus:outline-none focus:ring-1 focus:ring-zinc-400 focus:bg-amber-50/50 rounded px-0.5 transition-colors cursor-text";
-
-  const getCleanDomain = (url: string) => {
-    try {
-      const parsed = new URL(url);
-      return (parsed.host || parsed.hostname).replace("www.", "");
-    } catch {
-      return url;
-    }
-  };
 
   return (
     <div
@@ -215,19 +207,19 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
         <div className="flex flex-col" style={{ gap: `${projectGap}px` }}>
           {resume.projects.map((project, idx) => (
             <div key={idx} className="break-inside-avoid print:break-inside-avoid">
-              <div className="flex items-start justify-between gap-3 mb-0.5 flex-wrap">
-                <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                <div className="flex-1 min-w-0 flex items-baseline gap-1.5 flex-wrap">
                   <h3
                     contentEditable
                     suppressContentEditableWarning
                     onBlur={(e) =>
                       onEditableBlur(`projName.${idx}`, e.currentTarget.innerText)
                     }
-                    className={`text-[1.12em] font-bold text-slate-900 ${editableClass}`}
+                    className={`text-[1.12em] font-bold text-slate-900 shrink-0 ${editableClass}`}
                   >
                     {project.name}
                   </h3>
-                  <span className="text-[1.02em] text-slate-600 font-medium">|</span>
+                  <span className="text-[1.02em] text-slate-400 font-medium shrink-0">|</span>
                   <span
                     contentEditable
                     suppressContentEditableWarning
@@ -239,37 +231,33 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
                     {project.subtitle}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[0.9em] shrink-0">
-                  {project.demoUrl && (
-                    <a
-                      href={project.demoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-slate-600 hover:text-slate-900 underline font-semibold transition-colors"
-                    >
-                      <span>Live Demo</span>
-                      <span className="hidden print:inline text-slate-500 font-normal ml-0.5">
-                        ({getCleanDomain(project.demoUrl)})
-                      </span>
-                    </a>
-                  )}
-                  {project.demoUrl && "videoUrl" in project && Boolean(project.videoUrl) && (
-                    <span className="text-slate-400 font-normal select-none">|</span>
-                  )}
-                  {"videoUrl" in project && Boolean(project.videoUrl) && (
-                    <a
-                      href={project.videoUrl as string}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-slate-600 hover:text-slate-900 underline font-semibold transition-colors"
-                    >
-                      <span>Video Explanation</span>
-                      <span className="hidden print:inline text-slate-500 font-normal ml-0.5">
-                        ({getCleanDomain(project.videoUrl as string)})
-                      </span>
-                    </a>
-                  )}
-                </div>
+                {(() => {
+                  const links = [
+                    project.demoUrl ? { label: "Live Demo", url: project.demoUrl } : null,
+                    project.videoUrl ? { label: "Video Explanation", url: project.videoUrl } : null,
+                    project.docUrl ? { label: "Documentation", url: project.docUrl } : null,
+                  ].filter(Boolean) as { label: string; url: string }[];
+
+                  if (links.length === 0) return null;
+
+                  return (
+                    <div className="flex items-center gap-1.5 text-[0.88em] shrink-0 ml-2 whitespace-nowrap">
+                      {links.map((link, lIdx) => (
+                        <React.Fragment key={link.label}>
+                          {lIdx > 0 && <span className="text-slate-300 font-normal select-none">|</span>}
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-slate-600 hover:text-slate-950 font-semibold no-underline transition-colors"
+                          >
+                            {link.label}
+                          </a>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
               <ul className="flex flex-col gap-0.5 list-none ml-0.5">
                 {project.bullets.map((bullet, bIdx) => (

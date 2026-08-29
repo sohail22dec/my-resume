@@ -95,7 +95,7 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
   // Project Handlers
   const handleProjectFieldChange = (
     pIdx: number,
-    field: "name" | "subtitle" | "demoUrl" | "videoUrl",
+    field: "name" | "subtitle" | "demoUrl" | "videoUrl" | "docUrl",
     value: string
   ) => {
     const updatedProjects = resume.projects.map((p, idx) =>
@@ -144,6 +144,8 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
       name: "New AI Project",
       subtitle: "Full Stack AI Application",
       demoUrl: "https://example.com",
+      videoUrl: "",
+      docUrl: "",
       tech: ["Python", "FastAPI", "React"],
       bullets: ["Architected scalable microservices delivering <500ms latency."],
     };
@@ -416,7 +418,7 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="font-bold text-zinc-700 block mb-1 text-[11px]">Project Name:</label>
                     <input
@@ -427,35 +429,47 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-zinc-700 block mb-1 text-[11px]">Demo URL:</label>
+                    <label className="font-bold text-zinc-700 block mb-1 text-[11px]">Subtitle / Headline:</label>
+                    <input
+                      type="text"
+                      value={project.subtitle}
+                      onChange={(e) => handleProjectFieldChange(pIdx, "subtitle", e.target.value)}
+                      className="w-full p-1.5 bg-white border border-zinc-300 rounded text-zinc-800 text-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="font-bold text-zinc-700 block mb-1 text-[11px]">Live Demo URL:</label>
                     <input
                       type="text"
                       value={project.demoUrl || ""}
                       onChange={(e) => handleProjectFieldChange(pIdx, "demoUrl", e.target.value)}
                       className="w-full p-1.5 bg-white border border-zinc-300 rounded text-zinc-800 text-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none"
-                      placeholder="http://..."
+                      placeholder="https://..."
                     />
                   </div>
                   <div>
                     <label className="font-bold text-zinc-700 block mb-1 text-[11px]">Video Walkthrough URL:</label>
                     <input
                       type="text"
-                      value={("videoUrl" in project ? (project.videoUrl as string) : "") || ""}
+                      value={project.videoUrl || ""}
                       onChange={(e) => handleProjectFieldChange(pIdx, "videoUrl", e.target.value)}
                       className="w-full p-1.5 bg-white border border-zinc-300 rounded text-zinc-800 text-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none"
                       placeholder="https://..."
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="font-bold text-zinc-700 block mb-1 text-[11px]">Subtitle / Headline:</label>
-                  <input
-                    type="text"
-                    value={project.subtitle}
-                    onChange={(e) => handleProjectFieldChange(pIdx, "subtitle", e.target.value)}
-                    className="w-full p-1.5 bg-white border border-zinc-300 rounded text-zinc-800 text-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none"
-                  />
+                  <div>
+                    <label className="font-bold text-zinc-700 block mb-1 text-[11px]">Documentation URL:</label>
+                    <input
+                      type="text"
+                      value={project.docUrl || ""}
+                      onChange={(e) => handleProjectFieldChange(pIdx, "docUrl", e.target.value)}
+                      className="w-full p-1.5 bg-white border border-zinc-300 rounded text-zinc-800 text-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none"
+                      placeholder="https://..."
+                    />
+                  </div>
                 </div>
 
                 <div>
