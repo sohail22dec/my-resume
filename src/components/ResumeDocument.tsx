@@ -150,13 +150,23 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
         <h2 className="text-[1.05em] font-bold tracking-[0.1em] uppercase text-slate-900 border-b-2 border-slate-900 pb-0.5 mb-1 inline-block">
           Professional Summary
         </h2>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => onEditableBlur("summary", e.currentTarget.innerText)}
-          className={`text-[1em] text-slate-700 text-justify ${editableClass}`}
-        >
-          {resume.summary}
+        {/*
+          FIX: The outer <p> must NOT be contentEditable.
+          A block-level contentEditable element creates an oversized bounding box
+          in Chromium's PDF text layer that bleeds down over sections below it
+          (Skills), making those sections unselectable/unclickable in the PDF.
+          Moving contentEditable to the inner inline <span> fixes this because
+          inline elements have tight bounding boxes matching only their text.
+        */}
+        <p className="text-[1em] text-slate-700 text-justify">
+          <span
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) => onEditableBlur("summary", e.currentTarget.innerText)}
+            className={editableClass}
+          >
+            {resume.summary}
+          </span>
         </p>
       </section>
 

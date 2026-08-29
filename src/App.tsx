@@ -66,6 +66,23 @@ export function App() {
 
   // Keep state in sync with resumeData.ts unless customized by user in UI
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem("saved_resume_data");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const hasOldProjects = parsed.projects?.some(
+          (p: { name: string }) => p.name.includes("DocMatch") || p.name.includes("Kraya")
+        );
+        if (hasOldProjects) {
+          localStorage.removeItem("saved_resume_data");
+          localStorage.removeItem("resume_is_customized");
+          setActiveResume(resumeData);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
     const isCustomized = localStorage.getItem("resume_is_customized");
     if (isCustomized !== "true") {
       setActiveResume(resumeData);

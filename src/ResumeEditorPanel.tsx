@@ -95,7 +95,7 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
   // Project Handlers
   const handleProjectFieldChange = (
     pIdx: number,
-    field: "name" | "subtitle" | "demoUrl",
+    field: "name" | "subtitle" | "demoUrl" | "videoUrl",
     value: string
   ) => {
     const updatedProjects = resume.projects.map((p, idx) =>
@@ -416,7 +416,7 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
                     <label className="font-bold text-zinc-700 block mb-1 text-[11px]">Project Name:</label>
                     <input
@@ -432,6 +432,16 @@ export const ResumeEditorPanel: React.FC<ResumeEditorPanelProps> = ({
                       type="text"
                       value={project.demoUrl || ""}
                       onChange={(e) => handleProjectFieldChange(pIdx, "demoUrl", e.target.value)}
+                      className="w-full p-1.5 bg-white border border-zinc-300 rounded text-zinc-800 text-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none"
+                      placeholder="http://..."
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-zinc-700 block mb-1 text-[11px]">Video Walkthrough URL:</label>
+                    <input
+                      type="text"
+                      value={("videoUrl" in project ? (project.videoUrl as string) : "") || ""}
+                      onChange={(e) => handleProjectFieldChange(pIdx, "videoUrl", e.target.value)}
                       className="w-full p-1.5 bg-white border border-zinc-300 rounded text-zinc-800 text-xs focus:ring-1 focus:ring-zinc-900 focus:outline-none"
                       placeholder="https://..."
                     />
