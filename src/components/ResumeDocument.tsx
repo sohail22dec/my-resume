@@ -24,7 +24,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
   const getCleanDomain = (url: string) => {
     try {
       const parsed = new URL(url);
-      return parsed.hostname.replace("www.", "");
+      return (parsed.host || parsed.hostname).replace("www.", "");
     } catch {
       return url;
     }
@@ -239,34 +239,37 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
                     {project.subtitle}
                   </span>
                 </div>
-                {project.demoUrl && (
-                  <a
-                    href={project.demoUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[0.9em] text-slate-600 hover:text-slate-900 underline font-semibold transition-colors"
-                  >
-                    <span>Live Demo</span>
-                    <span className="hidden print:inline text-slate-500 font-normal ml-0.5">
-                      ({getCleanDomain(project.demoUrl)})
-                    </span>
-                  </a>
-                )}
-              </div>
-              <div className="mb-0.5 flex items-baseline gap-1">
-                <span className="text-[0.95em] font-semibold text-slate-700 shrink-0">
-                  Technologies:
-                </span>
-                <span
-                  contentEditable
-                  suppressContentEditableWarning
-                  onBlur={(e) =>
-                    onEditableBlur(`projTech.${idx}`, e.currentTarget.innerText)
-                  }
-                  className={`text-[0.95em] text-slate-600 italic ${editableClass}`}
-                >
-                  {project.tech.join(", ")}
-                </span>
+                <div className="flex items-center gap-1.5 text-[0.9em] shrink-0">
+                  {project.demoUrl && (
+                    <a
+                      href={project.demoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-slate-600 hover:text-slate-900 underline font-semibold transition-colors"
+                    >
+                      <span>Live Demo</span>
+                      <span className="hidden print:inline text-slate-500 font-normal ml-0.5">
+                        ({getCleanDomain(project.demoUrl)})
+                      </span>
+                    </a>
+                  )}
+                  {project.demoUrl && "videoUrl" in project && Boolean(project.videoUrl) && (
+                    <span className="text-slate-400 font-normal select-none">|</span>
+                  )}
+                  {"videoUrl" in project && Boolean(project.videoUrl) && (
+                    <a
+                      href={project.videoUrl as string}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-slate-600 hover:text-slate-900 underline font-semibold transition-colors"
+                    >
+                      <span>Video Explanation</span>
+                      <span className="hidden print:inline text-slate-500 font-normal ml-0.5">
+                        ({getCleanDomain(project.videoUrl as string)})
+                      </span>
+                    </a>
+                  )}
+                </div>
               </div>
               <ul className="flex flex-col gap-0.5 list-none ml-0.5">
                 {project.bullets.map((bullet, bIdx) => (

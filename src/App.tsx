@@ -71,7 +71,8 @@ export function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         const hasOldProjects = parsed.projects?.some(
-          (p: { name: string }) => p.name.includes("DocMatch") || p.name.includes("Kraya")
+          (p: { name: string; demoUrl?: string }) =>
+            p.name.includes("DocMatch") || p.name.includes("Kraya") || p.demoUrl?.includes("3000")
         );
         if (hasOldProjects) {
           localStorage.removeItem("saved_resume_data");

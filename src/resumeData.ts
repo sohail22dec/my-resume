@@ -72,7 +72,7 @@ export const resumeData = {
     {
       name: "DataPilot",
       subtitle: "Autonomous Text-to-SQL & Business Data Intelligence Platform",
-      demoUrl: "http://3.25.64.38:3000`",
+      demoUrl: "http://3.25.64.38:3001/",
       videoUrl: "https://lnkd.in/p/dgYMyS9t",
       tech: [
         "LangGraph StateGraph",
@@ -106,7 +106,7 @@ export const resumeData = {
       ],
       bullets: [
         "Architected an adaptive Corrective RAG (CRAG) state machine dynamically routing queries across pgvector vector search, Tavily web search, and direct LLM generation with 85.7% routing accuracy.",
-        "Built automated guardrails and evaluation suite achieving 100% safety & prompt injection blocking (0.00s overhead), automated PII redaction, and 85.7% answer faithfulness (groundedness) and relevance.",
+        "Built automated guardrails and evaluation suite achieving 100% safety & prompt injection blocking (<2ms overhead), automated PII redaction, and 85.7% answer faithfulness (groundedness) and relevance.",
         "Integrated dual-model routing (Qwen-3.6-27B routing validator + GPT-OSS-120B synthesizer) on Groq LPUs with prompt caching, slashing inference token costs by 74% and eliminating hallucinations.",
       ],
     },
