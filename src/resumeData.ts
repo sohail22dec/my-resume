@@ -146,9 +146,9 @@ export const resumeData: ResumeDataType = {
         "Security Guardrails",
       ],
       bullets: [
-        "Architected an adaptive Corrective RAG (CRAG) state machine dynamically routing queries across pgvector vector search, Tavily web search, and direct LLM generation with 85.7% routing accuracy.",
-        "Built automated guardrails and evaluation suite achieving 100% safety & prompt injection blocking (<2ms overhead), automated PII redaction, and 85.7% answer faithfulness (groundedness) and relevance.",
-        "Integrated dual-model routing (Qwen-3.6-27B routing validator + GPT-OSS-120B synthesizer) on Groq LPUs with prompt caching, slashing inference token costs by 74% and eliminating hallucinations.",
+        "Architected an adaptive Corrective RAG (CRAG) state machine dynamically routing queries across pgvector vector search, Tavily web search, and direct LLM generation with 100% route accuracy across 27 evaluation benchmarks.",
+        "Engineered automated guardrails and evaluation suite achieving 100% safety & prompt injection blocking (0ms overhead), automated PII redaction, 87.0% faithfulness (groundedness), and 88.9% answer relevance.",
+        "Integrated dual-model routing (gemini 3.5 flash lite routing validator + GPT-OSS-120B synthesizer) on Groq LPUs with prompt caching, slashing inference token costs by 74% and eliminating hallucinations.",
       ],
     },
     {
