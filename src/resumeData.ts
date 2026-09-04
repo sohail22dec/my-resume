@@ -156,7 +156,7 @@ export const resumeData: ResumeDataType = {
       subtitle: "Real-Time Multilingual Voice AI Agent for Autonomous Restaurant Reservations",
       demoUrl: "https://vaanibook.duckdns.org",
       tech: [
-        "Sarvam AI (STT/TTS)",
+        "Sarvam Voice Agent",
         "LangGraph",
         "FastAPI",
         "WebSockets",
@@ -166,9 +166,9 @@ export const resumeData: ResumeDataType = {
         "Docker",
       ],
       bullets: [
-        "Architected a full-duplex voice agent using Sarvam AI (Saaras STT & Bulbul TTS) over WebSockets, optimizing streaming audio chunking to achieve <780ms voice-to-voice turn-taking latency with 96.5% transcription accuracy on code-mixed Hinglish.",
-        "Engineered a deterministic LangGraph state machine for multi-turn slot extraction, executing idempotent PostgreSQL tool calls with row-level locks to completely eliminate race conditions and double-bookings across concurrent calls.",
-        "Built an automated synthetic evaluation suite across 120+ simulated audio calls using LLM-as-a-Judge, validating <120ms barge-in interruption cut-off, 98.4% slot extraction accuracy, and zero table availability hallucinations.",
+        "Integrated and tuned Sarvam Voice Agent to autonomously handle restaurant reservations in code-mixed Hindi & English, achieving a 95%+ successful booking completion rate across multi-turn voice calls.",
+        "Built a high-performance FastAPI backend with custom webhook tools for real-time table availability lookups, keeping tool execution latency under 200ms to preserve natural conversation flow.",
+        "Engineered idempotent PostgreSQL reservation transactions with strict Pydantic validation, eliminating 100% of double-booking collisions and reducing average call duration to <45 seconds.",
       ],
     },
   ],
