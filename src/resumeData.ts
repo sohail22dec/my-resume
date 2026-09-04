@@ -127,7 +127,7 @@ export const resumeData: ResumeDataType = {
       ],
       bullets: [
         "Engineered an autonomous agent empowering small businesses to extract revenue trends, inventory anomalies, and customer insights via plain English to SQL with self-healing query correction in 1.3s.",
-        "Cut query token consumption by 85% (down to $0.00044 / ₹0.037 per query) using relational schema compression, dynamic context row truncation, and sub-0.05ms security checks.",
+        "Cut end-to-end query token consumption by 85% using relational schema pruning, dynamic context window sizing, and sub-millisecond zero-token deterministic security guardrails.",
         "Benchmarked across 210 test scenarios using automated LLM-as-a-Judge, achieving 99.6% data faithfulness and integrating Human-in-the-Loop (HITL) approval gates for critical actions.",
       ],
     },
